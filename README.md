@@ -93,6 +93,23 @@ ai-infra-lab/
 │   ├── scheduler/
 │   └── prefix-cache/
 │
+├── 14-nvidia-device-plugin/
+│   └── gpu-pod.yaml
+│
+├── 16-time-slicing/
+│   ├── gpu-benchmark.yaml
+│   ├── gpu-share-test.yaml
+│   └── time-slicing-config.yaml
+│
+├── 17-k8s-vllm/
+│   ├── vllm-deployment.yaml
+│   ├── vllm-model-download.yaml
+│   ├── vllm-service.yaml
+│   └── vllm-storage.yaml
+│
+├── 18-kserve/
+│   └── qwen-kserve.yaml
+│
 ```
 
 ### 03 - CUDA Stack
@@ -1217,6 +1234,8 @@ Prefix Cache Hit
 实验结果主要用于观察参数变化与性能趋势。
 
 Note: 本次 vLLM Benchmark 过程中，实验服务器出现过偶发整机卡死/重启，因此各组结果并非一次连续 Benchmark Run 完成，而是在多次实验中分别取得完整结果。当前稳定性问题仍在进一步排查，因此这些数据不作为严格的硬件性能基准。
+
+Note: 14、16、17、18 目录中的 YAML 文件为对应博客的 Kubernetes 实验配置，仅供学习和参考。实际部署时需根据集群环境调整相关配置，并非开箱即用的完整部署方案。
 
 ## About
 

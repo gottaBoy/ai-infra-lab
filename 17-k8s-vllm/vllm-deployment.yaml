@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+  namespace: ai-infra
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: vllm
+
+  template:
+    metadata:
+      labels:
+        app: vllm
+
+    spec:
+      terminationGracePeriodSeconds: 60
+
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.31.0
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - --model
+            - Qwen/Qwen2.5-7B-Instruct-AWQ
+            - --served-model-name
+            - qwen2.5-7b-awq
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --dtype
+            - half
+            - --gpu-memory-utilization
+            - "0.80"
+            - --max-model-len
+            - "2048"
+            - --max-num-seqs
+            - "4"
+            - --enforce-eager
+
+          env:
+            - name: HF_HOME
+              value: /models/hf
+            - name: VLLM_CACHE_ROOT
+              value: /models/vllm
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 10Gi
+              nvidia.com/gpu: 1
+
+          volumeMounts:
+            - name: model-cache
+              mountPath: /models
+
+            - name: shm
+              mountPath: /dev/shm
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 180
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: vllm-model-pvc
+
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi

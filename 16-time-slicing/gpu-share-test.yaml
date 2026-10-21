@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpu-share-test
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: gpu-share-test
+  template:
+    metadata:
+      labels:
+        app: gpu-share-test
+    spec:
+      containers:
+        - name: cuda
+          image: nvidia/cuda:12.8.0-base-ubuntu24.04
+          command:
+            - bash
+            - -c
+            - |
+              echo "=== GPU ==="
+              nvidia-smi -L
+              sleep infinity
+          resources:
+            limits:
+              nvidia.com/gpu: 1

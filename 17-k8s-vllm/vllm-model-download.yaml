@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vllm-model-download
+  namespace: ai-infra
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Never
+      containers:
+        - name: downloader
+          image: python:3.11-slim
+          env:
+            - name: HF_HOME
+              value: /models/hf
+  
+            - name: HTTP_PROXY
+              value: http://PROXY_IP:PROXY_PORT
+
+            - name: HTTPS_PROXY
+              value: http://PROXY_IP:PROXY_PORT
+
+            - name: NO_PROXY
+              value: localhost,127.0.0.1,.svc,.cluster.local
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -e
+
+              pip install --no-cache-dir \
+                huggingface_hub==0.36.0
+
+              python - <<'PY'
+              import time
+              from huggingface_hub import snapshot_download
+
+              start = time.monotonic()
+
+              path = snapshot_download(
+                  repo_id="Qwen/Qwen2.5-7B-Instruct-AWQ"
+              )
+
+              print("Model path:", path)
+              print(
+                  "Download elapsed:",
+                  round(time.monotonic() - start, 2),
+                  "seconds"
+              )
+              PY
+
+          volumeMounts:
+            - name: model-cache
+              mountPath: /models
+
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: vllm-model-pvc

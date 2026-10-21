@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gpu-benchmark
+spec:
+  completions: 2
+  parallelism: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: benchmark
+          image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+          command:
+            - python
+            - -c
+            - |
+              import torch
+              import time
+              import socket
+
+              print("pod:", socket.gethostname())
+              print("gpu:", torch.cuda.get_device_name(0))
+
+              n = 4096
+
+              a = torch.randn((n, n), device="cuda")
+              b = torch.randn((n, n), device="cuda")
+
+              for _ in range(5):
+                  c = torch.mm(a, b)
+                  torch.cuda.synchronize()
+
+              count = 0
+              start = time.perf_counter()
+
+              while time.perf_counter() - start < 60:
+                  c = torch.mm(a, b)
+                  torch.cuda.synchronize()
+                  count += 1
+
+              elapsed = time.perf_counter() - start
+
+              print("iterations:", count)
+              print("elapsed:", elapsed)
+              print("iterations/sec:", count / elapsed)
+          resources:
+            limits:
+              nvidia.com/gpu: 1

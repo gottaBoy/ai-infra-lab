@@ -1,0 +1,34 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+
+metadata:
+  name: qwen-kserve
+  namespace: ai-infra
+
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: huggingface
+
+      runtime: kserve-huggingfaceserver
+
+      storageUri: hf://Qwen/Qwen2.5-0.5B-Instruct
+
+      args:
+        - --model_name=qwen
+        - --backend=vllm
+        - --max_model_len=2048
+        - --gpu_memory_utilization=0.80
+        - --enforce_eager
+
+      resources:
+        requests:
+          cpu: "1"
+          memory: 4Gi
+          nvidia.com/gpu: "1"
+
+        limits:
+          cpu: "2"
+          memory: 6Gi
+          nvidia.com/gpu: "1"
